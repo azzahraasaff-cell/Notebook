@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Catatan Harian</title>
+<style>
+:root{color-scheme:dark;--bg:#121212;--side:#181818;--card:#1e1e1e;--line:#2c2c2c;--tx:#e8e6e3;--mut:#8d8d8d;--ac:#7aa2f7;--red:#f07178;--yel:#e5c07b;--grn:#8fbf7f;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;min-height:100vh}
+aside{width:230px;background:var(--side);border-right:1px solid var(--line);padding:18px 12px;position:sticky;top:0;height:100vh;flex:none}
+aside h1{font-size:15px;margin:0 8px 16px;font-weight:600}
+aside a{display:flex;justify-content:space-between;padding:7px 10px;border-radius:7px;color:var(--mut);text-decoration:none;margin-bottom:2px}
+aside a:hover{background:#242424;color:var(--tx)}
+aside a.on{background:#262626;color:var(--tx)}
+aside small{font-size:12px;color:var(--mut)}
+aside .hint{margin:18px 10px 0;font-size:12px;color:var(--mut)}
+kbd{background:#262626;border:1px solid var(--line);border-radius:4px;padding:0 5px;font:12px inherit}
+main{flex:1;min-width:0;padding:36px 28px 100px;max-width:820px;margin:0 auto}
+h2{font-size:26px;margin:0 0 4px;font-weight:650}
+.sub{color:var(--mut);margin:0 0 22px}
+h3{font-size:13px;color:var(--mut);font-weight:600;margin:24px 0 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.grid .card{margin:0}
+input,textarea,select,button{font:inherit;color:inherit}
+input,textarea,select{background:#161616;border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+input:focus,textarea:focus,select:focus,button:focus-visible{outline:2px solid var(--ac);outline-offset:1px}
+textarea{resize:vertical;min-height:90px}
+button{background:#262626;border:1px solid var(--line);border-radius:8px;padding:7px 12px;cursor:pointer}
+button:hover{background:#2e2e2e}
+button.pri{background:var(--ac);border-color:var(--ac);color:#0d1420;font-weight:600}
+button.pri:hover{filter:brightness(1.1)}
+button.ghost{background:none;border:none;color:var(--mut);padding:4px 8px}
+button.ghost:hover{color:var(--red)}
+.row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.row>input[type=date],.row>select{width:auto}
+.item{display:flex;gap:10px;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line)}
+.item:last-child{border:none}
+.item .t{flex:1;min-width:0;word-break:break-word}
+.item.done .t{text-decoration:line-through;color:var(--mut)}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--ac);flex:none}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.tag{font-size:12px;color:var(--mut);white-space:nowrap}
+.empty{color:var(--mut);padding:10px 2px}
+.moods button{font-size:20px;padding:4px 9px}
+.moods button.on{border-color:var(--ac);background:#1d2536}
+.split{display:grid;grid-template-columns:200px 1fr;gap:18px}
+.list a{display:block;padding:7px 10px;border-radius:7px;color:var(--mut);text-decoration:none;cursor:pointer}
+.list a:hover,.list a.on{background:#262626;color:var(--tx)}
+label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
+.banner{display:flex;gap:12px;align-items:center;justify-content:space-between;background:#2a2416;border:1px solid #4a3f1f;color:var(--yel);border-radius:10px;padding:10px 14px;margin-bottom:20px}
+#fab{position:fixed;right:22px;bottom:calc(22px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;font-size:26px;padding:0;background:var(--ac);border-color:var(--ac);color:#0d1420;box-shadow:0 6px 20px #0008}
+#modal{position:fixed;inset:0;background:#000a;display:none;align-items:flex-start;justify-content:center;padding-top:15vh;z-index:20}
+#modal.open{display:flex}
+#modal .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;width:min(520px,92vw)}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#2a2a2a;padding:8px 14px;border-radius:8px;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.show{opacity:1}
+@media(max-width:760px){
+body{flex-direction:column}
+aside{width:100%;height:auto;position:sticky;top:env(safe-area-inset-top,0px);z-index:10;display:flex;gap:4px;overflow-x:auto;padding:8px;border-right:0;border-bottom:1px solid var(--line)}
+aside h1,aside .hint{display:none}
+aside a{white-space:nowrap;gap:6px;margin:0}
+main{padding:22px 16px 100px}
+.split{grid-template-columns:1fr}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<aside id="nav"></aside>
+<main id="view"></main>
+<button id="fab" title="Tangkap cepat (Ctrl+K)" aria-label="Tangkap cepat">+</button>
+<div id="modal"><div class="box"><div class="row" style="margin:0"><input id="qc" placeholder="Tulis apa saja, lalu tekan Enter" autocomplete="off"></div><p class="tag" style="margin:8px 0 0">Enter untuk simpan ke Inbox. Esc untuk tutup.</p></div></div>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9);
+const iso=d=>{const x=new Date(d);return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0')};
+const today=()=>iso(new Date());
+const fmt=s=>new Date(s+'T00:00').toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+let S={todos:[],inbox:[],journal:{},deadlines:[],meetings:[],meta:{}};
+try{const r=localStorage.getItem('catatan-v1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+let memo=false;
+const save=()=>{try{localStorage.setItem('catatan-v1',JSON.stringify(S))}catch(e){if(!memo){memo=true;toast('Penyimpanan browser tidak tersedia, data hilang saat ditutup')}}};
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.id);toast.id=setTimeout(()=>t.classList.remove('show'),1800)}
+
+const pages=[['hari-ini','Hari Ini'],['jurnal','Jurnal'],['deadline','Deadline'],['rapat','Catatan Rapat'],['todo','To-Do'],['inbox','Inbox'],['cadangan','Cadangan']];
+const groups={hari:'Hari Ini',minggu:'Minggu Ini',nanti:'Nanti'};
+const moods=['😄','🙂','😐','😟','😢'];
+let page=(location.hash||'#hari-ini').slice(1),jDate=today(),mId=null;
+if(!pages.some(p=>p[0]===page))page='hari-ini';
+
+const days=d=>Math.round((new Date(d+'T00:00')-new Date(today()+'T00:00'))/864e5);
+const dl=d=>{const n=days(d);return n<=1?['var(--red)',n<0?'Terlewat '+(-n)+' hari':n===0?'Hari ini':'Besok']:n<=7?['var(--yel)',n+' hari lagi']:['var(--mut)',n+' hari lagi']};
+
+function nav(){
+  const c={'todo':S.todos.filter(t=>!t.done).length,'inbox':S.inbox.length,'deadline':S.deadlines.filter(t=>!t.done).length};
+  $('#nav').innerHTML='<h1>📓 Catatan Harian</h1>'+pages.map(([k,n])=>`<a href="#${k}" class="${k===page?'on':''}">${n}${c[k]?`<small>${c[k]}</small>`:''}</a>`).join('')+'<p class="hint">Tangkap cepat: <kbd>Ctrl</kbd> + <kbd>K</kbd></p>';
+}
+function todoRow(t){return `<div class="item ${t.done?'done':''}"><input type="checkbox" data-act="tt" data-id="${t.id}" ${t.done?'checked':''} aria-label="Selesai"><span class="t">${esc(t.t)}</span><button class="ghost" data-act="tg" data-id="${t.id}" title="Pindah kelompok">${groups[t.g]} ›</button><button class="ghost" data-act="td" data-id="${t.id}" aria-label="Hapus">✕</button></div>`}
+function dlRow(d){const [col,txt]=dl(d.d);return `<div class="item ${d.done?'done':''}"><input type="checkbox" data-act="dt" data-id="${d.id}" ${d.done?'checked':''} aria-label="Selesai"><span class="dot" style="background:${d.done?'var(--grn)':col}"></span><span class="t">${esc(d.t)}</span><span class="tag">${fmt(d.d)} · ${d.done?'Selesai':txt}</span><button class="ghost" data-act="dd" data-id="${d.id}" aria-label="Hapus">✕</button></div>`}
+const sortDl=()=>[...S.deadlines].sort((a,b)=>(a.done-b.done)||a.d.localeCompare(b.d));
+
+const total=()=>S.todos.length+S.inbox.length+S.deadlines.length+S.meetings.length+Object.keys(S.journal).length;
+const V={
+'cadangan'(){
+  const l=S.meta&&S.meta.lastBackup,n=l?-days(l):0;
+  return `<h2>Cadangan</h2><p class="sub">Datamu tersimpan di browser ini. Unduh cadangan setiap minggu dan simpan di laptop atau Drive.</p>
+  <div class="card"><b>${l?'Cadangan terakhir: '+fmt(l)+' ('+(n===0?'hari ini':n+' hari lalu')+')':'Belum pernah dicadangkan'}</b>
+  <p class="tag" style="margin:6px 0 12px">${total()} item tersimpan. Pengingat muncul di semua halaman jika sudah 7 hari atau lebih.</p>
+  <button class="pri" data-act="backup">Unduh cadangan</button></div>
+  <div class="card"><b>Pulihkan dari cadangan</b><p class="tag" style="margin:6px 0 12px">Memilih file cadangan akan mengganti semua data di browser ini.</p><input type="file" id="rf" accept=".json"></div>`},
+'hari-ini'(){
+  const h=new Date().getHours(),g=h<11?'Selamat pagi':h<15?'Selamat siang':h<18?'Selamat sore':'Selamat malam';
+  const dls=sortDl().filter(d=>!d.done).slice(0,4),td=S.todos.filter(t=>!t.done&&t.g==='hari').slice(0,5);
+  return `<h2>${g}</h2><p class="sub">${fmt(today())}</p>
+  <div class="grid">
+  <div class="card"><b>Deadline terdekat</b><div style="margin-top:6px">${dls.map(d=>`<div class="item"><span class="dot" style="background:${dl(d.d)[0]}"></span><span class="t">${esc(d.t)}</span><span class="tag">${dl(d.d)[1]}</span></div>`).join('')||'<div class="empty">Belum ada deadline.</div>'}</div></div>
+  <div class="card"><b>To-do hari ini</b><div style="margin-top:6px">${td.map(todoRow).join('')||'<div class="empty">Tidak ada tugas untuk hari ini.</div>'}</div></div>
+  <div class="card"><b>Inbox</b><p style="margin:6px 0">${S.inbox.length?S.inbox.length+' catatan belum dirapikan.':'Inbox kosong.'}</p><a href="#inbox" style="color:var(--ac)">Buka Inbox</a></div>
+  </div>
+  <h3>Mulai cepat</h3><div class="row"><button class="pri" data-go="jurnal">Tulis jurnal hari ini</button><button data-act="newMeet">Rapat baru</button></div>`},
+jurnal(){
+  const e=S.journal[jDate]||{text:'',mood:''},ds=Object.keys(S.journal).filter(k=>S.journal[k].text||S.journal[k].mood).sort().reverse();
+  return `<h2>Jurnal</h2><p class="sub">Satu entri per hari, tersimpan otomatis.</p>
+  <div class="split"><div class="list"><a data-act="jd" data-d="${today()}" class="${jDate===today()?'on':''}">Hari ini</a>${ds.filter(d=>d!==today()).map(d=>`<a data-act="jd" data-d="${d}" class="${d===jDate?'on':''}">${fmt(d)}</a>`).join('')}</div>
+  <div><div class="row"><input type="date" id="jdate" value="${jDate}"><span class="moods">${moods.map(m=>`<button data-act="jm" data-m="${m}" class="${e.mood===m?'on':''}" aria-label="Suasana ${m}">${m}</button>`).join('')}</span></div>
+  <textarea id="jtext" style="min-height:320px" placeholder="Bagaimana harimu?">${esc(e.text)}</textarea></div></div>`},
+deadline(){
+  return `<h2>Deadline</h2><p class="sub">Merah untuk besok atau terlewat, kuning untuk minggu ini.</p>
+  <div class="row"><input id="dt" placeholder="Apa deadline-nya?"><input type="date" id="dd" value="${today()}"><button class="pri" data-act="addDl">Tambah</button></div>
+  <div class="card">${sortDl().map(dlRow).join('')||'<div class="empty">Belum ada deadline.</div>'}</div>`},
+rapat(){
+  const m=S.meetings.find(x=>x.id===mId);
+  const list=[...S.meetings].sort((a,b)=>b.date.localeCompare(a.date));
+  return `<h2>Catatan Rapat</h2><p class="sub">Poin penting dan tindak lanjut di satu tempat.</p>
+  <div class="split"><div class="list"><button class="pri" data-act="newMeet" style="width:100%;margin-bottom:8px">Rapat baru</button>${list.map(x=>`<a data-act="om" data-id="${x.id}" class="${x.id===mId?'on':''}">${esc(x.title||'Tanpa judul')}<br><small class="tag">${fmt(x.date)}</small></a>`).join('')}</div>
+  <div>${m?`<input id="mt" value="${esc(m.title)}" placeholder="Judul rapat" style="font-size:18px;font-weight:600">
+  <div class="row" style="margin-top:8px"><input type="date" id="md" value="${m.date}"><input id="mp" value="${esc(m.people)}" placeholder="Peserta"></div>
+  <label>Poin penting</label><textarea id="mpt" placeholder="Satu poin per baris">${esc(m.points)}</textarea>
+  <label>Tindak lanjut (satu per baris)</label><textarea id="mac" placeholder="Siapa melakukan apa">${esc(m.actions)}</textarea>
+  <div class="row" style="margin-top:10px"><button class="pri" data-act="mToTodo">Kirim tindak lanjut ke To-Do</button><button class="ghost" data-act="delMeet">Hapus rapat</button></div>`:'<div class="empty">Pilih rapat di kiri atau buat rapat baru.</div>'}</div></div>`},
+todo(){
+  return `<h2>To-Do</h2><p class="sub">Klik nama kelompok di kanan tugas untuk memindahkannya.</p>
+  <div class="row"><input id="tn" placeholder="Tugas baru, tekan Enter"><select id="tg">${Object.entries(groups).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><button class="pri" data-act="addTodo">Tambah</button></div>
+  ${Object.entries(groups).map(([k,v])=>`<h3>${v}</h3><div class="card">${S.todos.filter(t=>t.g===k).sort((a,b)=>a.done-b.done).map(todoRow).join('')||'<div class="empty">Kosong.</div>'}</div>`).join('')}`},
+inbox(){
+  return `<h2>Inbox</h2><p class="sub">Hasil tangkap cepat. Rapikan kapan saja.</p>
+  <div class="card">${S.inbox.map(i=>`<div class="item"><span class="t">${esc(i.t)}</span><button class="ghost" data-act="iTodo" data-id="${i.id}">Jadi to-do</button><button class="ghost" data-act="iDl" data-id="${i.id}">Jadi deadline</button><button class="ghost" data-act="iDel" data-id="${i.id}" aria-label="Hapus">✕</button></div>`).join('')||'<div class="empty">Inbox kosong. Tekan + untuk menangkap sesuatu.</div>'}</div>`}
+};
+
+function render(){
+  nav();
+  const f=document.activeElement&&document.activeElement.id;
+  const lb=S.meta&&S.meta.lastBackup,due=!lb||-days(lb)>=7;
+  $('#view').innerHTML=(due&&page!=='cadangan'&&total()>0?`<div class="banner"><span>${lb?'Sudah '+(-days(lb))+' hari sejak cadangan terakhir.':'Datamu belum pernah dicadangkan.'} Unduh cadangan dan simpan di laptop.</span><button class="pri" data-go="cadangan">Cadangkan</button></div>`:'')+V[page]();
+  if(f&&$('#'+f)&&f!=='qc')$('#'+f).focus();
+}
+const go=p=>{location.hash=p};
+window.addEventListener('hashchange',()=>{const p=location.hash.slice(1);if(V[p]){page=p;render()}});
+
+const A={
+tt(id){const t=S.todos.find(x=>x.id===id);t.done=!t.done},
+tg(id){const t=S.todos.find(x=>x.id===id),k=Object.keys(groups);t.g=k[(k.indexOf(t.g)+1)%3]},
+td(id){S.todos=S.todos.filter(x=>x.id!==id)},
+dt(id){const d=S.deadlines.find(x=>x.id===id);d.done=!d.done},
+dd(id){S.deadlines=S.deadlines.filter(x=>x.id!==id)},
+addTodo(){const v=$('#tn').value.trim();if(!v)return;S.todos.push({id:uid(),t:v,g:$('#tg').value,done:false})},
+addDl(){const v=$('#dt').value.trim();if(!v||!$('#dd').value)return toast('Isi judul dan tanggal');S.deadlines.push({id:uid(),t:v,d:$('#dd').value,done:false})},
+jd(_,el){jDate=el.dataset.d},
+jm(_,el){const e=S.journal[jDate]||(S.journal[jDate]={text:'',mood:''});e.mood=e.mood===el.dataset.m?'':el.dataset.m},
+newMeet(){const m={id:uid(),title:'',date:today(),people:'',points:'',actions:''};S.meetings.push(m);mId=m.id;page='rapat';location.hash='rapat'},
+om(id){mId=id},
+delMeet(){S.meetings=S.meetings.filter(x=>x.id!==mId);mId=null},
+mToTodo(){const m=S.meetings.find(x=>x.id===mId),ls=m.actions.split('\n').map(s=>s.trim()).filter(Boolean);if(!ls.length)return toast('Belum ada tindak lanjut');ls.forEach(t=>S.todos.push({id:uid(),t,g:'minggu',done:false}));m.actions='';toast(ls.length+' tugas dikirim ke To-Do')},
+iTodo(id){const i=S.inbox.find(x=>x.id===id);S.todos.push({id:uid(),t:i.t,g:'hari',done:false});S.inbox=S.inbox.filter(x=>x.id!==id);toast('Dipindah ke To-Do')},
+iDl(id){const i=S.inbox.find(x=>x.id===id),d=prompt('Tanggal deadline (YYYY-MM-DD):',today());if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d))return;S.deadlines.push({id:uid(),t:i.t,d,done:false});S.inbox=S.inbox.filter(x=>x.id!==id);toast('Dipindah ke Deadline')},
+iDel(id){S.inbox=S.inbox.filter(x=>x.id!==id)},
+async backup(){
+  let d=null;try{d=window.claude?await claude.use('downloads'):null}catch(e){}
+  if(!d)return toast('Unduhan tidak tersedia di tampilan ini');
+  try{await d.save({filename:'catatan-harian-'+today()+'.json',data:JSON.stringify(S,null,2)});S.meta=S.meta||{};S.meta.lastBackup=today();save();render();toast('Cadangan diunduh')}
+  catch(e){if(!e||e.code!=='declined')toast('Gagal mengunduh cadangan')}
+}
+};
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]');if(g){return go(g.dataset.go)}
+  const el=e.target.closest('[data-act]');if(!el||!A[el.dataset.act])return;
+  A[el.dataset.act](el.dataset.id,el);save();render();
+});
+document.addEventListener('input',e=>{
+  const id=e.target.id,m=S.meetings.find(x=>x.id===mId);
+  if(id==='jtext'){const j=S.journal[jDate]||(S.journal[jDate]={text:'',mood:''});j.text=e.target.value;save()}
+  else if(id==='jdate'){jDate=e.target.value||today();render()}
+  else if(m&&{mt:'title',md:'date',mp:'people',mpt:'points',mac:'actions'}[id]){m[{mt:'title',md:'date',mp:'people',mpt:'points',mac:'actions'}[id]]=e.target.value;save()}
+});
+document.addEventListener('keydown',e=>{
+  if(e.target.id==='tn'&&e.key==='Enter'){A.addTodo();save();render();$('#tn').focus()}
+  if(e.target.id==='dt'&&e.key==='Enter'){A.addDl();save();render()}
+  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='k'){e.preventDefault();openQ()}
+  if(e.key==='Escape')closeQ();
+});
+document.addEventListener('change',e=>{
+  if(e.target.id!=='rf'||!e.target.files[0])return;
+  const r=new FileReader();
+  r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!Array.isArray(o.todos))throw 0;S=Object.assign({todos:[],inbox:[],journal:{},deadlines:[],meetings:[],meta:{}},o);S.meta=S.meta||{};save();render();toast('Data dipulihkan')}catch(x){toast('File cadangan tidak valid')}};
+  r.readAsText(e.target.files[0]);
+});
+function openQ(){$('#modal').classList.add('open');$('#qc').value='';$('#qc').focus()}
+function closeQ(){$('#modal').classList.remove('open')}
+$('#fab').onclick=openQ;
+$('#modal').onclick=e=>{if(e.target.id==='modal')closeQ()};
+$('#qc').addEventListener('keydown',e=>{if(e.key==='Enter'){const v=e.target.value.trim();if(!v)return;S.inbox.unshift({id:uid(),t:v});save();closeQ();toast('Tersimpan di Inbox');render()}});
+render();
+</script>
+</body>
+</html>
