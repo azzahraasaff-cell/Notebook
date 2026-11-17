@@ -52,6 +52,15 @@ input[type=checkbox]{width:18px;height:18px;accent-color:var(--ac);flex:none}
 .list a:hover,.list a.on{background:#262626;color:var(--tx)}
 label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
 .banner{display:flex;gap:12px;align-items:center;justify-content:space-between;background:#2a2416;border:1px solid #4a3f1f;color:var(--yel);border-radius:10px;padding:10px 14px;margin-bottom:20px}
+.frow{display:flex;align-items:center}.frow a{flex:1;min-width:0}.frow .ghost{padding:2px 6px}
+.inner{margin-left:14px;border-left:1px solid var(--line);padding-left:6px}
+.note small{display:block}
+.tb{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 10px}
+.ed{min-height:420px;padding:16px 18px;border:1px solid var(--line);border-radius:10px;background:var(--card);outline:none;line-height:1.7}
+.ed:focus{border-color:var(--ac)}
+.ed h3{font-size:17px;margin:14px 0 4px;color:var(--tx);font-weight:650}
+.ed ul,.ed ol{padding-left:22px;margin:4px 0}
+#mt{font-size:24px;font-weight:650;background:none;border:none;padding:4px 0}
 #fab{position:fixed;right:22px;bottom:calc(22px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;font-size:26px;padding:0;background:var(--ac);border-color:var(--ac);color:#0d1420;box-shadow:0 6px 20px #0008}
 #modal{position:fixed;inset:0;background:#000a;display:none;align-items:flex-start;justify-content:center;padding-top:15vh;z-index:20}
 #modal.open{display:flex}
@@ -84,7 +93,12 @@ const today=()=>iso(new Date());
 const fmt=s=>new Date(s+'T00:00').toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
 let S={todos:[],inbox:[],journal:{},deadlines:[],meetings:[],meta:{}};
 try{const r=localStorage.getItem('catatan-v1');if(r)S=Object.assign(S,JSON.parse(r))}catch(e){}
+norm();
 let memo=false;
+const fOpen={};
+function clean(h){const t=document.createElement('template');t.innerHTML=h||'';const ok={B:1,STRONG:1,I:1,EM:1,U:1,H2:1,H3:1,UL:1,OL:1,LI:1,DIV:1,P:1,BR:1};
+(function w(n){[...n.childNodes].forEach(c=>{if(c.nodeType===3)return;if(c.nodeType!==1){c.remove();return}w(c);if(!ok[c.tagName]){c.replaceWith(...c.childNodes)}else{[...c.attributes].forEach(a=>c.removeAttribute(a.name))}})})(t.content);return t.innerHTML}
+function norm(){S.folders=S.folders||[];S.meta=S.meta||{};S.meetings.forEach(m=>{if(m.body===undefined){const li=t=>(t||'').split('\n').map(x=>x.trim()).filter(Boolean).map(x=>'<li>'+esc(x)+'</li>').join('');m.body='<h3>Poin penting</h3><ul>'+(li(m.points)||'<li><br></li>')+'</ul><h3>Tindak lanjut</h3><ul>'+(li(m.actions)||'<li><br></li>')+'</ul>'}m.f=m.f||''})}
 const save=()=>{try{localStorage.setItem('catatan-v1',JSON.stringify(S))}catch(e){if(!memo){memo=true;toast('Penyimpanan browser tidak tersedia, data hilang saat ditutup')}}};
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.id);toast.id=setTimeout(()=>t.classList.remove('show'),1800)}
 
@@ -136,14 +150,16 @@ deadline(){
   <div class="card">${sortDl().map(dlRow).join('')||'<div class="empty">Belum ada deadline.</div>'}</div>`},
 rapat(){
   const m=S.meetings.find(x=>x.id===mId);
-  const list=[...S.meetings].sort((a,b)=>b.date.localeCompare(a.date));
-  return `<h2>Catatan Rapat</h2><p class="sub">Poin penting dan tindak lanjut di satu tempat.</p>
-  <div class="split"><div class="list"><button class="pri" data-act="newMeet" style="width:100%;margin-bottom:8px">Rapat baru</button>${list.map(x=>`<a data-act="om" data-id="${x.id}" class="${x.id===mId?'on':''}">${esc(x.title||'Tanpa judul')}<br><small class="tag">${fmt(x.date)}</small></a>`).join('')}</div>
-  <div>${m?`<input id="mt" value="${esc(m.title)}" placeholder="Judul rapat" style="font-size:18px;font-weight:600">
-  <div class="row" style="margin-top:8px"><input type="date" id="md" value="${m.date}"><input id="mp" value="${esc(m.people)}" placeholder="Peserta"></div>
-  <label>Poin penting</label><textarea id="mpt" placeholder="Satu poin per baris">${esc(m.points)}</textarea>
-  <label>Tindak lanjut (satu per baris)</label><textarea id="mac" placeholder="Siapa melakukan apa">${esc(m.actions)}</textarea>
-  <div class="row" style="margin-top:10px"><button class="pri" data-act="mToTodo">Kirim tindak lanjut ke To-Do</button><button class="ghost" data-act="delMeet">Hapus rapat</button></div>`:'<div class="empty">Pilih rapat di kiri atau buat rapat baru.</div>'}</div></div>`},
+  const by=f=>S.meetings.filter(x=>(x.f||'')===f).sort((a,b)=>b.date.localeCompare(a.date));
+  const li=x=>`<a data-act="om" data-id="${x.id}" class="note ${x.id===mId?'on':''}">📄 <span class="nt">${esc(x.title||'Tanpa judul')}</span><small class="tag">${fmt(x.date)}</small></a>`;
+  const tree=S.folders.map(f=>`<div><div class="frow"><a data-act="tf" data-id="${f.id}">${fOpen[f.id]?'📂':'📁'} ${esc(f.name)} <small class="tag">${by(f.id).length}</small></a><button class="ghost" data-act="newMeet" data-f="${f.id}" title="Catatan baru di folder ini">+</button><button class="ghost" data-act="rf" data-id="${f.id}" title="Ganti nama">✎</button><button class="ghost" data-act="df" data-id="${f.id}" title="Hapus folder">✕</button></div>${fOpen[f.id]?'<div class="inner">'+(by(f.id).map(li).join('')||'<div class="empty">Folder kosong</div>')+'</div>':''}</div>`).join('');
+  const loose=by('');
+  return `<h2>Catatan Rapat</h2><p class="sub">Susun catatan dalam folder. Semua bisa diedit lagi kapan saja.</p>
+  <div class="split"><div class="list"><div class="row"><button class="pri" data-act="newMeet" style="flex:1">Catatan baru</button><button data-act="newFolder" title="Folder baru">📁+</button></div>${tree}${loose.length?'<h3>Tanpa folder</h3>'+loose.map(li).join(''):''}${!S.folders.length&&!loose.length?'<div class="empty">Belum ada catatan.</div>':''}</div>
+  <div>${m?`<input id="mt" value="${esc(m.title)}" placeholder="Judul catatan">
+  <div class="row"><input type="date" id="md" value="${m.date}"><input id="mp" value="${esc(m.people)}" placeholder="Peserta"><select id="mf"><option value="">Tanpa folder</option>${S.folders.map(f=>`<option value="${f.id}" ${m.f===f.id?'selected':''}>${esc(f.name)}</option>`).join('')}</select></div>
+  <div class="tb"><button data-cmd="bold" aria-label="Tebal"><b>B</b></button><button data-cmd="italic" aria-label="Miring"><i>I</i></button><button data-cmd="underline" aria-label="Garis bawah"><u>U</u></button><button data-cmd="formatBlock" data-v="h3">Judul</button><button data-cmd="formatBlock" data-v="div">Teks</button><button data-cmd="insertUnorderedList">• Daftar</button><button data-cmd="insertOrderedList">1. Daftar</button><button class="pri" data-act="mToTodo">Kirim teks terpilih ke To-Do</button><button class="ghost" data-act="delMeet">Hapus catatan</button></div>
+  <div id="ed" class="ed" contenteditable="true">${clean(m.body)}</div>`:'<div class="empty">Pilih catatan di kiri, atau buat catatan baru.</div>'}</div></div>`},
 todo(){
   return `<h2>To-Do</h2><p class="sub">Klik nama kelompok di kanan tugas untuk memindahkannya.</p>
   <div class="row"><input id="tn" placeholder="Tugas baru, tekan Enter"><select id="tg">${Object.entries(groups).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select><button class="pri" data-act="addTodo">Tambah</button></div>
@@ -173,18 +189,26 @@ addTodo(){const v=$('#tn').value.trim();if(!v)return;S.todos.push({id:uid(),t:v,
 addDl(){const v=$('#dt').value.trim();if(!v||!$('#dd').value)return toast('Isi judul dan tanggal');S.deadlines.push({id:uid(),t:v,d:$('#dd').value,done:false})},
 jd(_,el){jDate=el.dataset.d},
 jm(_,el){const e=S.journal[jDate]||(S.journal[jDate]={text:'',mood:''});e.mood=e.mood===el.dataset.m?'':el.dataset.m},
-newMeet(){const m={id:uid(),title:'',date:today(),people:'',points:'',actions:''};S.meetings.push(m);mId=m.id;page='rapat';location.hash='rapat'},
+newMeet(_,el){const f=(el&&el.dataset.f)||'';const m={id:uid(),title:'',date:today(),people:'',f,body:'<h3>Poin penting</h3><ul><li><br></li></ul><h3>Tindak lanjut</h3><ul><li><br></li></ul>'};S.meetings.push(m);mId=m.id;if(f)fOpen[f]=true;page='rapat';location.hash='rapat'},
+newFolder(){const n=prompt('Nama folder:');if(!n||!n.trim())return;const f={id:uid(),name:n.trim()};S.folders.push(f);fOpen[f.id]=true},
+tf(id){fOpen[id]=!fOpen[id]},
+rf(id){const f=S.folders.find(x=>x.id===id),n=prompt('Nama baru folder:',f.name);if(n&&n.trim())f.name=n.trim()},
+df(id){const n=S.meetings.filter(x=>x.f===id).length;if(!confirm('Hapus folder ini?'+(n?' '+n+' catatan di dalamnya dipindah ke Tanpa folder.':'')))return;S.meetings.forEach(x=>{if(x.f===id)x.f=''});S.folders=S.folders.filter(x=>x.id!==id)},
 om(id){mId=id},
-delMeet(){S.meetings=S.meetings.filter(x=>x.id!==mId);mId=null},
-mToTodo(){const m=S.meetings.find(x=>x.id===mId),ls=m.actions.split('\n').map(s=>s.trim()).filter(Boolean);if(!ls.length)return toast('Belum ada tindak lanjut');ls.forEach(t=>S.todos.push({id:uid(),t,g:'minggu',done:false}));m.actions='';toast(ls.length+' tugas dikirim ke To-Do')},
+delMeet(){if(!confirm('Hapus catatan ini?'))return;S.meetings=S.meetings.filter(x=>x.id!==mId);mId=null},
+mToTodo(){const ls=window.getSelection().toString().split('\n').map(x=>x.trim()).filter(Boolean);if(!ls.length)return toast('Blok dulu teks yang ingin dikirim');ls.forEach(t=>S.todos.push({id:uid(),t,g:'minggu',done:false}));toast(ls.length+' tugas dikirim ke To-Do')},
 iTodo(id){const i=S.inbox.find(x=>x.id===id);S.todos.push({id:uid(),t:i.t,g:'hari',done:false});S.inbox=S.inbox.filter(x=>x.id!==id);toast('Dipindah ke To-Do')},
 iDl(id){const i=S.inbox.find(x=>x.id===id),d=prompt('Tanggal deadline (YYYY-MM-DD):',today());if(!d||!/^\d{4}-\d{2}-\d{2}$/.test(d))return;S.deadlines.push({id:uid(),t:i.t,d,done:false});S.inbox=S.inbox.filter(x=>x.id!==id);toast('Dipindah ke Deadline')},
 iDel(id){S.inbox=S.inbox.filter(x=>x.id!==id)},
-async backup(){
-  let d=null;try{d=window.claude?await claude.use('downloads'):null}catch(e){}
-  if(!d)return toast('Unduhan tidak tersedia di tampilan ini');
-  try{await d.save({filename:'catatan-harian-'+today()+'.json',data:JSON.stringify(S,null,2)});S.meta=S.meta||{};S.meta.lastBackup=today();save();render();toast('Cadangan diunduh')}
-  catch(e){if(!e||e.code!=='declined')toast('Gagal mengunduh cadangan')}
+backup(){
+  try{
+    const blob=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    const u=URL.createObjectURL(blob),l=document.createElement('a');
+    l.href=u;l.download='catatan-harian-'+today()+'.json';
+    document.body.appendChild(l);l.click();l.remove();
+    setTimeout(()=>URL.revokeObjectURL(u),1000);
+    S.meta=S.meta||{};S.meta.lastBackup=today();save();toast('Cadangan diunduh');
+  }catch(e){toast('Gagal mengunduh cadangan')}
 }
 };
 document.addEventListener('click',e=>{
@@ -196,7 +220,9 @@ document.addEventListener('input',e=>{
   const id=e.target.id,m=S.meetings.find(x=>x.id===mId);
   if(id==='jtext'){const j=S.journal[jDate]||(S.journal[jDate]={text:'',mood:''});j.text=e.target.value;save()}
   else if(id==='jdate'){jDate=e.target.value||today();render()}
-  else if(m&&{mt:'title',md:'date',mp:'people',mpt:'points',mac:'actions'}[id]){m[{mt:'title',md:'date',mp:'people',mpt:'points',mac:'actions'}[id]]=e.target.value;save()}
+  else if(m&&id==='ed'){m.body=e.target.innerHTML;save()}
+  else if(m&&id==='mf'){m.f=e.target.value;if(m.f)fOpen[m.f]=true;save();render()}
+  else if(m&&{mt:'title',md:'date',mp:'people'}[id]){m[{mt:'title',md:'date',mp:'people'}[id]]=e.target.value;save();if(id==='mt'){const n=document.querySelector('.note.on .nt');if(n)n.textContent=m.title||'Tanpa judul'}}
 });
 document.addEventListener('keydown',e=>{
   if(e.target.id==='tn'&&e.key==='Enter'){A.addTodo();save();render();$('#tn').focus()}
@@ -207,9 +233,12 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('change',e=>{
   if(e.target.id!=='rf'||!e.target.files[0])return;
   const r=new FileReader();
-  r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!Array.isArray(o.todos))throw 0;S=Object.assign({todos:[],inbox:[],journal:{},deadlines:[],meetings:[],meta:{}},o);S.meta=S.meta||{};save();render();toast('Data dipulihkan')}catch(x){toast('File cadangan tidak valid')}};
+  r.onload=()=>{try{const o=JSON.parse(r.result);if(!o||!Array.isArray(o.todos))throw 0;S=Object.assign({todos:[],inbox:[],journal:{},deadlines:[],meetings:[],meta:{}},o);norm();save();render();toast('Data dipulihkan')}catch(x){toast('File cadangan tidak valid')}};
   r.readAsText(e.target.files[0]);
 });
+document.addEventListener('mousedown',e=>{if(e.target.closest('.tb button'))e.preventDefault()});
+document.addEventListener('click',e=>{const c=e.target.closest('[data-cmd]');if(!c)return;document.execCommand(c.dataset.cmd,false,c.dataset.v||null);const m=S.meetings.find(x=>x.id===mId),ed=$('#ed');if(m&&ed){m.body=ed.innerHTML;save()}});
+document.addEventListener('paste',e=>{if(e.target.id!=='ed')return;e.preventDefault();document.execCommand('insertText',false,(e.clipboardData||window.clipboardData).getData('text/plain'))});
 function openQ(){$('#modal').classList.add('open');$('#qc').value='';$('#qc').focus()}
 function closeQ(){$('#modal').classList.remove('open')}
 $('#fab').onclick=openQ;
