@@ -61,6 +61,13 @@ label{display:block;font-size:13px;color:var(--mut);margin:12px 0 4px}
 .ed h3{font-size:17px;margin:14px 0 4px;color:var(--tx);font-weight:650}
 .ed ul,.ed ol{padding-left:22px;margin:4px 0}
 #mt{font-size:24px;font-weight:650;background:none;border:none;padding:4px 0}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 16px;color:var(--tx);text-decoration:none}
+.stat b{display:block;font-size:26px;line-height:1.2}.stat span{color:var(--mut);font-size:13px}.stat:hover{border-color:var(--ac)}
+.hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+.card a.more{color:var(--ac);font-size:13px;text-decoration:none}
+.card a.item{color:inherit;text-decoration:none}.card a.item:hover .t{color:var(--ac)}
+.card h3.sg{margin:10px 0 2px}
 #fab{position:fixed;right:22px;bottom:calc(22px + env(safe-area-inset-bottom,0px));width:52px;height:52px;border-radius:50%;font-size:26px;padding:0;background:var(--ac);border-color:var(--ac);color:#0d1420;box-shadow:0 6px 20px #0008}
 #modal{position:fixed;inset:0;background:#000a;display:none;align-items:flex-start;justify-content:center;padding-top:15vh;z-index:20}
 #modal.open{display:flex}
@@ -102,7 +109,7 @@ function norm(){S.folders=S.folders||[];S.meta=S.meta||{};S.meetings.forEach(m=>
 const save=()=>{try{localStorage.setItem('catatan-v1',JSON.stringify(S))}catch(e){if(!memo){memo=true;toast('Penyimpanan browser tidak tersedia, data hilang saat ditutup')}}};
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.id);toast.id=setTimeout(()=>t.classList.remove('show'),1800)}
 
-const pages=[['hari-ini','Hari Ini'],['jurnal','Jurnal'],['deadline','Deadline'],['rapat','Catatan Rapat'],['todo','To-Do'],['inbox','Inbox'],['cadangan','Cadangan']];
+const pages=[['hari-ini','Dashboard'],['jurnal','Jurnal'],['deadline','Deadline'],['rapat','Catatan Rapat'],['todo','To-Do'],['inbox','Inbox'],['cadangan','Cadangan']];
 const groups={hari:'Hari Ini',minggu:'Minggu Ini',nanti:'Nanti'};
 const moods=['😄','🙂','😐','😟','😢'];
 let page=(location.hash||'#hari-ini').slice(1),jDate=today(),mId=null;
@@ -130,14 +137,24 @@ const V={
   <div class="card"><b>Pulihkan dari cadangan</b><p class="tag" style="margin:6px 0 12px">Memilih file cadangan akan mengganti semua data di browser ini.</p><input type="file" id="rf" accept=".json"></div>`},
 'hari-ini'(){
   const h=new Date().getHours(),g=h<11?'Selamat pagi':h<15?'Selamat siang':h<18?'Selamat sore':'Selamat malam';
-  const dls=sortDl().filter(d=>!d.done).slice(0,4),td=S.todos.filter(t=>!t.done&&t.g==='hari').slice(0,5);
+  const dls=sortDl().filter(d=>!d.done),tds=S.todos.filter(t=>!t.done);
+  const js=Object.keys(S.journal).filter(k=>S.journal[k].text||S.journal[k].mood).sort().reverse();
+  const ms=[...S.meetings].sort((a,b)=>b.date.localeCompare(a.date));
+  const fn=id=>(S.folders.find(f=>f.id===id)||{}).name||'Tanpa folder';
+  const card=(t,href,body,total,shown)=>`<div class="card"><div class="hd"><b>${t}</b><a class="more" href="#${href}">${total>shown?'Lihat semua ('+total+')':'Buka'}</a></div>${body}</div>`;
+  const none=m=>`<div class="empty">${m}</div>`;
+  const lb=S.meta&&S.meta.lastBackup,nb=lb?-days(lb):0;
+  const stat=(n,l,href)=>`<a class="stat" href="#${href}"><b>${n}</b><span>${l}</span></a>`;
+  const dlB=dls.slice(0,6).map(d=>`<div class="item"><span class="dot" style="background:${dl(d.d)[0]}"></span><span class="t">${esc(d.t)}</span><span class="tag">${dl(d.d)[1]}</span></div>`).join('')||none('Belum ada deadline.');
+  const tdB=tds.length?Object.entries(groups).map(([k,v])=>{const l=tds.filter(t=>t.g===k);return l.length?`<h3 class="sg">${v} (${l.length})</h3>`+l.slice(0,4).map(t=>`<div class="item"><input type="checkbox" data-act="tt" data-id="${t.id}" aria-label="Selesai"><span class="t">${esc(t.t)}</span></div>`).join(''):''}).join(''):none('Tidak ada tugas aktif.');
+  const inB=S.inbox.slice(0,5).map(i=>`<div class="item"><span class="t">${esc(i.t)}</span></div>`).join('')||none('Inbox kosong.');
+  const jB=js.slice(0,3).map(d=>`<a class="item" href="#jurnal" data-act="jd" data-d="${d}"><span>${S.journal[d].mood||'📝'}</span><span class="t">${esc((S.journal[d].text||'').replace(/\s+/g,' ').slice(0,70)||'(tanpa isi)')}</span><span class="tag">${fmt(d)}</span></a>`).join('')||none('Belum ada entri jurnal.');
+  const mB=ms.slice(0,5).map(m=>`<a class="item" href="#rapat" data-act="om" data-id="${m.id}"><span>📄</span><span class="t">${esc(m.title||'Tanpa judul')}</span><span class="tag">${esc(fn(m.f))} · ${fmt(m.date)}</span></a>`).join('')||none('Belum ada catatan rapat.');
   return `<h2>${g}</h2><p class="sub">${fmt(today())}</p>
-  <div class="grid">
-  <div class="card"><b>Deadline terdekat</b><div style="margin-top:6px">${dls.map(d=>`<div class="item"><span class="dot" style="background:${dl(d.d)[0]}"></span><span class="t">${esc(d.t)}</span><span class="tag">${dl(d.d)[1]}</span></div>`).join('')||'<div class="empty">Belum ada deadline.</div>'}</div></div>
-  <div class="card"><b>To-do hari ini</b><div style="margin-top:6px">${td.map(todoRow).join('')||'<div class="empty">Tidak ada tugas untuk hari ini.</div>'}</div></div>
-  <div class="card"><b>Inbox</b><p style="margin:6px 0">${S.inbox.length?S.inbox.length+' catatan belum dirapikan.':'Inbox kosong.'}</p><a href="#inbox" style="color:var(--ac)">Buka Inbox</a></div>
-  </div>
-  <h3>Mulai cepat</h3><div class="row"><button class="pri" data-go="jurnal">Tulis jurnal hari ini</button><button data-act="newMeet">Rapat baru</button></div>`},
+  <div class="stats">${stat(tds.length,'To-do aktif','todo')}${stat(dls.length,'Deadline aktif','deadline')}${stat(ms.length,'Catatan rapat','rapat')}${stat(js.length,'Entri jurnal','jurnal')}${stat(S.inbox.length,'Inbox','inbox')}</div>
+  <div class="grid">${card('Deadline','deadline',dlB,dls.length,6)}${card('To-Do','todo',tdB,tds.length,4)}${card('Catatan rapat terbaru','rapat',mB,ms.length,5)}${card('Jurnal terbaru','jurnal',jB,js.length,3)}${card('Inbox','inbox',inB,S.inbox.length,5)}
+  <div class="card"><div class="hd"><b>Cadangan</b><a class="more" href="#cadangan">Buka</a></div><p style="margin:6px 0">${lb?'Terakhir: '+fmt(lb)+' ('+(nb===0?'hari ini':nb+' hari lalu')+')':'Belum pernah dicadangkan.'}</p></div></div>
+  <h3>Mulai cepat</h3><div class="row"><button class="pri" data-go="jurnal">Tulis jurnal hari ini</button><button data-act="newMeet">Catatan rapat baru</button></div>`},
 jurnal(){
   const e=S.journal[jDate]||{text:'',mood:''},ds=Object.keys(S.journal).filter(k=>S.journal[k].text||S.journal[k].mood).sort().reverse();
   return `<h2>Jurnal</h2><p class="sub">Satu entri per hari, tersimpan otomatis.</p>
